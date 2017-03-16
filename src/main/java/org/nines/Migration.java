@@ -5,15 +5,12 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -22,6 +19,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.transform.TransformerException;
 
 import static net.middell.XML.children;
 import static net.middell.XML.elements;
@@ -71,12 +69,12 @@ public class Migration {
         return XML_NS.equals(element.getNamespaceURI()) && localName.equals(element.getLocalName());
     }
 
-    public boolean apply(Model model) {
+    public boolean apply(Model model, RdfXmlDocument xml) {
         boolean modelChanged = false;
         for (final ResIterator it = model.listSubjects(); it.hasNext(); ) {
             final Resource subject = it.next();
             for (Rule rule : rules) {
-                final boolean applied = rule.apply(subject);
+                final boolean applied = rule.apply(subject, xml);
                 if (applied) {
                     LOG.fine(() -> String.format("! %s (%s)", subject, rule));
                     modelChanged = true;
@@ -88,12 +86,11 @@ public class Migration {
         return modelChanged;
     }
 
-    public boolean apply(File rdf) throws IOException {
+    public boolean apply(File rdf) throws IOException, SAXException, TransformerException {
+        final RdfXmlDocument xml = new RdfXmlDocument(rdf);
         final Model model = ModelFactory.createDefaultModel().read(rdf.toURI().toURL().toString());
-        if (apply(model)) {
-            try (OutputStream stream = Files.newOutputStream(rdf.toPath())) {
-                RDFDataMgr.write(stream, model, RDFFormat.RDFXML_PLAIN);
-            }
+        if (apply(model, xml)) {
+            xml.write(rdf);
             return true;
         }
         return false;

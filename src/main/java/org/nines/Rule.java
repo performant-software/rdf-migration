@@ -86,15 +86,15 @@ public class Rule {
         return subjectFilters.toArray(new SubjectFilter[subjectFilters.size()]);
     }
 
-    public boolean apply(Resource resource) {
+    public boolean apply(Resource resource, RdfXmlDocument xml) {
         boolean applied = false;
 
         if (appliesTo(resource)) {
             for (PropertyValue propertyValue : addedProperties) {
-                applied = propertyValue.addTo(resource) || applied;
+                applied = propertyValue.addTo(resource, xml) || applied;
             }
             for (PropertyValue propertyValue : removedProperties) {
-                applied = propertyValue.removeFrom(resource) || applied;
+                applied = propertyValue.removeFrom(resource, xml) || applied;
             }
         }
 

@@ -4,7 +4,6 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.w3c.dom.Element;
 
@@ -40,22 +39,30 @@ public class PropertyValue {
         return String.format("<{%s}%s = %s>", namespaceUri, localName, value);
     }
 
-    public boolean addTo(Resource resource) {
-        resource.addProperty(property, value);
+    public boolean addTo(Resource resource, RdfXmlDocument xml) {
+        if (hasProperty(resource)) {
+            return false;
+        }
+        xml.add(resource, property, value);
         LOG.finest(() -> String.format("+ %s %s = %s", resource, property, value));
         return true;
     }
 
-    public boolean removeFrom(Resource resource) {
-        boolean applied = false;
+    public boolean removeFrom(Resource resource, RdfXmlDocument xml) {
+        if (!hasProperty(resource)) {
+            return false;
+        }
+        xml.remove(resource, property, value);
+        LOG.finest(() -> String.format("- %s %s = %s", resource, property, value));
+        return true;
+    }
+
+    private boolean hasProperty(Resource resource) {
         for (final StmtIterator it = resource.listProperties(property); it.hasNext(); ) {
-            final Statement statement = it.next();
-            if (value.equals(statement.getObject().asLiteral().getString())) {
-                it.remove();
-                applied = true;
-                LOG.finest(() -> String.format("- %s %s = %s", resource, property, value));
+            if (value.equals(it.next().getObject().asLiteral().getString())) {
+                return true;
             }
         }
-        return applied;
+        return false;
     }
 }
