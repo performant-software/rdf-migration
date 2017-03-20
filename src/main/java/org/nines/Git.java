@@ -22,7 +22,7 @@ public class Git {
         this.repository = repository;
     }
 
-    public static Git shallowClone(File workspace, Arc.GitLabProject gitLabProject) throws IOException {
+    public static Git clone(File workspace, Arc.GitLabProject gitLabProject) throws IOException {
         execute(workspace, "git", "clone", gitLabProject.gitUrl());
         return new Git(new File(workspace, gitLabProject.name));
     }

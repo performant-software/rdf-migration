@@ -20,7 +20,7 @@ public class RdfProject implements Closeable {
     }
 
     public static RdfProject checkout(File workspace, Arc.GitLabProject gitLabProject) throws IOException {
-        return new RdfProject(Git.shallowClone(workspace, gitLabProject));
+        return new RdfProject(Git.clone(workspace, gitLabProject));
     }
 
     public RdfProject withWorkingBranch(String name) throws IOException {
