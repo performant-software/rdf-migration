@@ -1,9 +1,8 @@
 package org.nines;
 
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.w3c.dom.Element;
 
@@ -16,15 +15,15 @@ public class PropertyValue {
 
     private static final Logger LOG = Logging.forClass(PropertyValue.class);
 
-    private static final Model MODEL = ModelFactory.createDefaultModel();
-
     public final Property property;
     public final String namespaceUri;
     public final String localName;
     public final String value;
+    private boolean singleton;
 
     public PropertyValue(String namespaceUri, String localName, String value) {
-        this.property = MODEL.createProperty(namespaceUri, localName);
+        this.property = ResourceFactory.createProperty(namespaceUri, localName);
+        this.singleton = Schema.SINGLETON_PROPERTIES.contains(property);
         this.namespaceUri = namespaceUri;
         this.localName = localName;
         this.value = value;
@@ -42,6 +41,9 @@ public class PropertyValue {
     public boolean addTo(Resource resource, RdfXmlDocument xml) {
         if (hasProperty(resource)) {
             return false;
+        }
+        if (singleton) {
+            xml.remove(resource, property);
         }
         xml.add(resource, property, value);
         LOG.finest(() -> String.format("+ %s %s = %s", resource, property, value));

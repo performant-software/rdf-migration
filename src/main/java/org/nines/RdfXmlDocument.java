@@ -6,7 +6,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDF;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
 import org.w3c.dom.traversal.NodeIterator;
@@ -23,6 +22,7 @@ import java.util.Optional;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPathExpression;
 
 /**
  * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
@@ -31,6 +31,11 @@ public class RdfXmlDocument {
 
     public final Document document;
     public final Map<String, List<Element>> resourceIndex;
+
+    public static File format(File file) throws IOException, SAXException, TransformerException {
+        new RdfXmlDocument(file).write(file);
+        return file;
+    }
 
     public RdfXmlDocument(File file) throws IOException, SAXException {
         this(XML.newDocumentBuilder().parse(file));
@@ -42,8 +47,7 @@ public class RdfXmlDocument {
     }
 
     public void write(File rdf) throws TransformerException {
-        XML.nodes(XML.xpath("//text()[normalize-space(.) = '']"), document)
-                .forEach(emptyTextNode -> emptyTextNode.getParentNode().removeChild(emptyTextNode));
+        XML.nodes(EMPTY_TEXT_NODES, document).forEach(n -> n.getParentNode().removeChild(n));
         XML.indentingTransformer(XML.newTransformer())
                 .transform(new DOMSource(document), new StreamResult(rdf));
     }
@@ -59,6 +63,10 @@ public class RdfXmlDocument {
 
     }
 
+    public void remove(Resource resource, Property property) {
+        remove(resource, property, null);
+    }
+
     public void remove(Resource resource, Property property, String value) {
         final String ns = property.getNameSpace();
         final String ln = property.getLocalName();
@@ -72,7 +80,7 @@ public class RdfXmlDocument {
                 if (!ln.equals(propertyEl.getLocalName())) {
                     continue;
                 }
-                if (!value.equals(propertyEl.getTextContent().trim())) {
+                if (value != null && !value.equals(propertyEl.getTextContent().trim())) {
                     continue;
                 }
                 removed.add(propertyEl);
@@ -107,4 +115,7 @@ public class RdfXmlDocument {
         }
         return resourceIndex;
     }
+
+    private static final XPathExpression EMPTY_TEXT_NODES = XML.xpath("//text()[normalize-space(.) = '']");
+
 }
