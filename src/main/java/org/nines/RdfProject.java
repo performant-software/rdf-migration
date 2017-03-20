@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
@@ -32,7 +33,7 @@ public class RdfProject implements Closeable {
                 .filter(p -> !p.startsWith(dotGit))
                 .filter(Files::isRegularFile)
                 .map(Path::toFile)
-                .filter(f -> f.getName().toLowerCase().endsWith(".rdf"))
+                .filter(f -> RDF_FILE_EXTENSIONS.matcher(f.getName().toLowerCase()).find())
                 .toArray(File[]::new);
     }
 
@@ -57,4 +58,6 @@ public class RdfProject implements Closeable {
     public void close() throws IOException {
         //Util.deleteRecursively(repository);
     }
+
+    private static final Pattern RDF_FILE_EXTENSIONS = Pattern.compile("\\.(rdf)|(xml)$");
 }
