@@ -1,0 +1,352 @@
+<!--
+
+    Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<migration xmlns="http://www.collex.org/migration#"
+           xmlns:collex="http://www.collex.org/schema#"
+           xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:role="http://www.loc.gov/loc.terms/relators/">
+
+    <title>ModNets Refactoring</title>
+
+    <!-- =============== GENRE-RELATED RULES =============== -->
+
+    <rule>
+        <subjects>
+            <collex:genre>Architecture</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Architecture</collex:discipline>
+            <collex:genre>Nonfiction</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Architecture</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Artifacts</collex:genre>
+        </subjects>
+        <removeProperties>
+            <collex:genre>Artifacts</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Book History</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Book History</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Book History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Family Life</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+            <collex:genre>Correspondence</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Family Life</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:archive>ibio</collex:archive>
+                <collex:archive>livingstone</collex:archive>
+            </anyOf>
+            <collex:genre>History</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Historiography</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:archive>orlando</collex:archive>
+            <collex:genre>History</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+            <collex:discipline>Gender Studies</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <noneOf>
+                <collex:genre>Bibliography</collex:genre>
+                <collex:genre>Catalog</collex:genre>
+                <collex:genre>Citation</collex:genre>
+                <collex:genre>Collection</collex:genre>
+                <collex:genre>Criticism</collex:genre>
+                <collex:genre>Drama</collex:genre>
+                <collex:genre>Ephemera</collex:genre>
+                <collex:genre>Fiction</collex:genre>
+                <collex:genre>Leisure</collex:genre>
+                <collex:genre>Letters</collex:genre>
+                <collex:genre>Life Writing</collex:genre>
+                <collex:genre>Music</collex:genre>
+                <collex:genre>Nonfiction</collex:genre>
+                <collex:genre>Photograph</collex:genre>
+                <collex:genre>Periodical</collex:genre>
+                <collex:genre>Poetry</collex:genre>
+                <collex:genre>Religion</collex:genre>
+                <collex:genre>Review</collex:genre>
+                <collex:genre>Translation</collex:genre>
+                <collex:genre>Travel</collex:genre>
+                <collex:genre>Visual Art</collex:genre>
+            </noneOf>
+            <collex:genre>History</collex:genre>
+            <role:AUT>The Vault at Pfaff's</role:AUT>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+            <collex:genre>Historiography</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:archive>amdVPC</collex:archive>
+                <collex:archive>exhibit_NINES_1</collex:archive>
+            </anyOf>
+            <collex:genre>History</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Humor</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Art Studies</collex:discipline>
+            <collex:genre>Life Writing</collex:genre>
+            <dc:type>Codex</dc:type>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Humor</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Law</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Law</collex:discipline>
+            <collex:genre>Nonfiction</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Law</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Leisure</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+            <collex:discipline>Sociology</collex:discipline>
+            <collex:genre>Ephemera</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Leisure</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Letters</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Correspondence</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Letters</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:archive>ibio</collex:archive>
+                <collex:archive>rossetti</collex:archive>
+                <collex:archive>Pfaffs</collex:archive>
+            </anyOf>
+            <collex:genre>Music</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Music Studies</collex:discipline>
+            <collex:genre>Musical Work</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Music</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Periodical</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Criticism</collex:genre>
+            <dc:type>Periodical</dc:type>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Periodical</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Politics</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Political Science</collex:discipline>
+            <collex:discipline>History</collex:discipline>
+            <collex:genre>Political Statement</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Politics</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Religion, Other</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Religion</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Religion, Other</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre>Travel</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Travel Writing</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Travel</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:archive>amdVPC</collex:archive>
+            <collex:genre>Manuscript</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:genre>Ephemera</collex:genre>
+        </addProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:archive>ibio</collex:archive>
+            <collex:genre>Manuscript</collex:genre>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+            <collex:genre>Nonfiction</collex:genre>
+            <collex:genre>Life Writing</collex:genre>
+        </addProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:archive>ibio</collex:archive>
+                <collex:archive>amdVPC</collex:archive>
+                <collex:archive>exhibit_NINES_1</collex:archive>
+                <collex:archive>rotunda_typee</collex:archive>
+            </anyOf>
+            <collex:genre>Manuscript</collex:genre>
+        </subjects>
+        <addProperties>
+            <dc:type>Manuscript</dc:type>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Manuscript</collex:genre>
+        </removeProperties>
+    </rule>
+
+    <!-- =============== GENERAL RULES =============== -->
+
+    <rule>
+        <subjects>
+            <dc:type>Catalog</dc:type>
+        </subjects>
+        <addProperties>
+            <dc:type>Collection</dc:type>
+        </addProperties>
+        <removeProperties>
+            <dc:type>Catalog</dc:type>
+        </removeProperties>
+    </rule>
+    
+    <rule>
+        <subjects>
+            <collex:genre>Musical Score</collex:genre>
+        </subjects>
+        <addProperties>
+            <dc:type>Notated Music</dc:type>
+        </addProperties>
+    </rule>
+    
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:discipline>Musicology</collex:discipline>
+                <collex:discipline>Musical Score</collex:discipline>
+            </anyOf>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Music Studies</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:discipline>Musicology</collex:discipline>
+            <collex:discipline>Musical Score</collex:discipline>
+        </removeProperties>
+    </rule>
+    
+    <rule>
+        <subjects>
+            <dc:type>Musical Score</dc:type>
+        </subjects>
+        <addProperties>
+            <dc:type>Notated Music</dc:type>
+            <collex:discipline>Music Studies</collex:discipline>
+            <collex:genre>Musical Score</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <dc:type>Musical Score</dc:type>
+        </removeProperties>
+    </rule>
+</migration>
