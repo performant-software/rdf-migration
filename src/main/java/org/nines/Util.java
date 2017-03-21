@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.nines;
 
 import okhttp3.OkHttpClient;
@@ -19,17 +34,27 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
- * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
+ * Utility methods.
  */
 public class Util {
 
+    /**
+     * Joins non-empty strings given as an array.
+     */
     public static String join(String delimiter, String... parts) {
         return join(delimiter, Stream.of(parts));
     }
 
+    /**
+     * Joins non-empty strings given as a list..
+     */
     public static String join(String delimiter, List<String> parts) {
         return join(delimiter, parts.stream());
     }
+
+    /**
+     * Joins non-empty strings given as a stream.
+     */
 
     public static String join(String delimiter, Stream<String> parts) {
         return parts
@@ -37,6 +62,12 @@ public class Util {
                 .collect(Collectors.joining(delimiter));
     }
 
+    /**
+     * Configures a HTTP client to trust any SSL/TLS peer.
+     *
+     * @param clientBuilder the builder via which the configuration is applied
+     * @return the configured builder
+     */
     public static OkHttpClient.Builder trustfulHttpClient(OkHttpClient.Builder clientBuilder) {
         try {
             final SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -59,15 +90,23 @@ public class Util {
         }
 
     };
+
+    /**
+     * Deletes a directory recursively.
+     *
+     * @param directory the directory to delete
+     */
     public static void deleteRecursively(Path directory) throws IOException {
         Files.walkFileTree(directory, new FileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                throws IOException {
                 Files.delete(file);
                 return FileVisitResult.CONTINUE;
             }
@@ -78,7 +117,8 @@ public class Util {
             }
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                throws IOException {
                 Files.delete(dir);
                 return FileVisitResult.CONTINUE;
             }

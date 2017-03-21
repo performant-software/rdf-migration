@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.nines;
 
 import net.middell.XML;
@@ -30,13 +45,17 @@ import static net.middell.XML.elements;
 import static org.nines.Util.join;
 
 /**
- * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
+ * A RDF migration rule set.
  */
 public class Migration {
 
+    private static final Logger LOG = Logging.forClass(Migration.class);
+
     private static final String XML_NS = "http://www.collex.org/migration#";
 
-    private static final Logger LOG = Logging.forClass(Migration.class);
+    private static final DateTimeFormatter FEATURE_BRANCH_TIMESTAMP = DateTimeFormatter
+        .ofPattern("yyyyMMddHHmm");
+    private static final ZoneId EASTERN_STANDARD_TIME = ZoneId.of("EST", ZoneId.SHORT_IDS);
 
     private final String title;
     private final Rule[] rules;
@@ -53,10 +72,22 @@ public class Migration {
                 .collect(Collectors.joining("\n"));
     }
 
+    /**
+     * Parses a migration rule set in a (XML) file.
+     *
+     * @see Migration#parse(Document)
+     */
     public static Migration parse(File file) throws IOException, SAXException {
         return parse(XML.newDocumentBuilder().parse(file));
     }
 
+    /**
+     * Parses a migration rule set expressed in a XML document.
+     *
+     * @param xml the XML document to parse
+     * @return the corresponding rule set
+     * @throws IllegalArgumentException in case of missing parts/ invalid syntax
+     */
     public static Migration parse(Document xml) {
         final Element rootElement = xml.getDocumentElement();
         if (!isMigrationElement(rootElement, "migration")) {
@@ -84,6 +115,13 @@ public class Migration {
         return XML_NS.equals(element.getNamespaceURI()) && localName.equals(element.getLocalName());
     }
 
+    /**
+     * Applies this rule set to a RDF model.
+     *
+     * @param model the RDF model
+     * @param xml the model as expressed in its source RDF/XML
+     * @return <code>true</code> if the model has been changed by this rule set
+     */
     public boolean apply(Model model, RdfXmlDocument xml) {
         boolean modelChanged = false;
         for (final ResIterator it = model.listSubjects(); it.hasNext(); ) {
@@ -101,7 +139,14 @@ public class Migration {
         return modelChanged;
     }
 
-    public boolean apply(File rdf) throws IOException, SAXException, TransformerException, JenaException {
+    /**
+     * Applies this rule set to a RDF model contained in a RDF/XML file.
+     *
+     * @see Migration#apply(Model, RdfXmlDocument)
+     */
+    public boolean apply(File rdf)
+        throws IOException, SAXException, TransformerException, JenaException {
+
         final RdfXmlDocument xml = new RdfXmlDocument(rdf);
         final Model model = ModelFactory.createDefaultModel().read(rdf.toURI().toURL().toString());
         if (apply(model, xml)) {
@@ -111,6 +156,16 @@ public class Migration {
         return false;
     }
 
+    /**
+     * Entry point into the migration tool.
+     *
+     * <p>A migration rule set is read from a file passed on the command line and applied to
+     * all RDF/XML sources contained in ARC's GitLab projects.
+     *
+     * @see Migration#parse(File)
+     * @see Arc#rdfRepositories()
+     * @see Migration#apply(File)
+     */
     public static void main(String[] args) throws Exception {
         Logging.configure();
         final Logger log = Logging.forClass(Migration.class);
@@ -128,7 +183,7 @@ public class Migration {
 
         final String featureBranchName = String.format(
                 "feature/rdf-migration-%s",
-                DateTimeFormatter.ofPattern("yyyyMMddHHmm").format(LocalDateTime.now(ZoneId.of("EST", ZoneId.SHORT_IDS)))
+                FEATURE_BRANCH_TIMESTAMP.format(LocalDateTime.now(EASTERN_STANDARD_TIME))
         );
 
         int skip = 1;
@@ -140,7 +195,9 @@ public class Migration {
             if (limit-- == 0) {
                 break;
             }
-            try (RdfProject rdfProject = RdfProject.checkout(workspace, gitLabProject).withWorkingBranch(featureBranchName)) {
+            try (RdfProject rdfProject = RdfProject.checkout(workspace, gitLabProject)) {
+                rdfProject.withWorkingBranch(featureBranchName);
+
                 final File[] rdfFiles = rdfProject.rdfFiles();
                 for (File rdfFile : rdfFiles) {
                     RdfXmlDocument.format(rdfFile);

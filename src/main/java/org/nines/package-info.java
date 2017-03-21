@@ -13,20 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.nines.filters;
-
-import org.apache.jena.rdf.model.Resource;
-
 /**
- * A filter matching RDF subjects.
+ * Main package of the ARC {@link org.nines.Migration#main(java.lang.String[]) RDF migration tool}.
  */
-public interface SubjectFilter {
-
-    /**
-     * Checks whether this filter matches a RDF subject/ resource.
-     *
-     * @param resource the subject to check against this filter
-     * @return <code>true</code> in case this filter matches
-     */
-    boolean appliesTo(Resource resource);
-}
+package org.nines;

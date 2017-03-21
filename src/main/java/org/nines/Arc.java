@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.nines;
 
 import com.squareup.moshi.Json;
@@ -22,14 +37,25 @@ import java.util.logging.Logger;
 import static okhttp3.logging.HttpLoggingInterceptor.Level.BODY;
 
 /**
- * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
+ * Access to the infrastructure of the Advanced Research Consortium (ARC).
+ *
+ * <p>ARC's GitLab service can be queried via its API.</p>
  */
 public class Arc {
 
+    /**
+     * A project in ARC's GitLab service.
+     */
     public static class GitLabProject {
+        /**
+         * The full path of the project, including the namespace.
+         */
         @Json(name = "path_with_namespace")
         public final String path;
 
+        /**
+         * The name of the project.
+         */
         @Json(name = "path")
         public final String name;
 
@@ -38,8 +64,15 @@ public class Arc {
             this.name = name;
         }
 
+        /**
+         * Constructs a Git URL for cloning the repository of this project.
+         * @return a Git URL, e.g. <code>git@gitlab.tamu.edu:test/project.git</code>
+         */
         public String gitUrl() {
-            return String.join(":", String.join("@", "git", GIT_LAB_HOST), String.join(".", path, "git"));
+            return String.join(":",
+                String.join("@", "git", GIT_LAB_HOST),
+                String.join(".", path, "git")
+            );
         }
         
         @Override
@@ -60,6 +93,14 @@ public class Arc {
     private final HttpUrl apiUrl;
     private final String gitLabToken;
 
+    /**
+     * Creates an instance of ARC's infrastructure.
+     *
+     * <p>The private token required for accessing GitLab's API is read from the environment
+     * variable <code>GITLAB_PRIVATE_TOKEN</code>.</p>
+     *
+     * @throws NullPointerException if the environment variable is not defined
+     */
     public Arc() {
         this(Objects.requireNonNull(
                 System.getenv("GITLAB_PRIVATE_TOKEN"),
@@ -67,10 +108,19 @@ public class Arc {
         ));
     }
 
+    /**
+     * Creates an instance of ARC's infrastructure.
+     *
+     * @param gitLabToken the private token to authenticate requests against GitLab's API
+     */
     public Arc(String gitLabToken) {
-        final OkHttpClient.Builder httpClientBuilder = Util.trustfulHttpClient(new OkHttpClient.Builder());
+        final OkHttpClient.Builder httpClientBuilder = Util.trustfulHttpClient(
+            new OkHttpClient.Builder()
+        );
         if (logger.isLoggable(Level.FINE)) {
-            httpClientBuilder.addInterceptor(new HttpLoggingInterceptor(logger::fine).setLevel(BODY));
+            httpClientBuilder.addInterceptor(
+                new HttpLoggingInterceptor(logger::fine).setLevel(BODY)
+            );
         }
         this.httpClient = httpClientBuilder.build();
         this.apiUrl = new HttpUrl.Builder()
@@ -79,6 +129,12 @@ public class Arc {
         this.gitLabToken = gitLabToken;
     }
 
+    /**
+     * Retrieves all accessible projects containing ARC's RDF source material.
+     *
+     * @return an array of GitLab projects
+     * @throws IOException in case of a network error
+     */
     public GitLabProject[] rdfRepositories() throws IOException {
         return gitLabProjects().stream()
                 .filter(gp -> gp.name.startsWith("arc_rdf"))
@@ -86,10 +142,16 @@ public class Arc {
                 .toArray(GitLabProject[]::new);
     }
 
+    /**
+     * Returns all accessible projects in ARC's GitLab service.
+     *
+     * @return an array of all GitLab projects
+     * @throws IOException in case of a network error
+     */
     public List<GitLabProject> gitLabProjects() throws IOException {
         return gitLabPages(
-                url -> url.addPathSegment("projects"),
-                GitLabProject.class, 100, 25
+            url -> url.addPathSegment("projects"),
+            GitLabProject.class, 100, 25
         );
     }
 
@@ -99,13 +161,18 @@ public class Arc {
                 .addHeader("PRIVATE-TOKEN", gitLabToken);
     }
 
-    private <T> List<T> gitLabPages(Function<HttpUrl.Builder, HttpUrl.Builder> url, Class<T> type, int pageSize, int maxPages) throws IOException {
-        final JsonAdapter<List<T>> jsonAdapter = moshi.adapter(Types.newParameterizedType(List.class, type));
+    private <T> List<T> gitLabPages(Function<HttpUrl.Builder, HttpUrl.Builder> url,
+                                    Class<T> type, int pageSize, int maxPages) throws IOException {
+        final JsonAdapter<List<T>> jsonAdapter = moshi.adapter(
+            Types.newParameterizedType(List.class, type)
+        );
 
         pageSize = Math.max(1, Math.min(100, pageSize));
         final List<T> result = new LinkedList<>();
         for (int page = 1; page <= maxPages; page++) {
-            final Request request = gitLabRequest(url.andThen(gitLabPaginate(page, pageSize))).build();
+            final Function<HttpUrl.Builder, HttpUrl.Builder> paginatedUrl = url
+                .andThen(gitLabPaginate(page, pageSize));
+            final Request request = gitLabRequest(paginatedUrl).build();
             final Response response = httpClient.newCall(request).execute();
             final List<T> pageContents = jsonAdapter.fromJson(response.body().source());
             result.addAll(pageContents);
@@ -116,7 +183,8 @@ public class Arc {
         return result;
     }
 
-    private static Function<HttpUrl.Builder, HttpUrl.Builder> gitLabPaginate(int page, int pageSize) {
+    private static Function<HttpUrl.Builder, HttpUrl.Builder> gitLabPaginate(int page,
+                                                                             int pageSize) {
         return url -> url
                 .addQueryParameter("page", Integer.toString(page))
                 .addQueryParameter("per_page", Integer.toString(pageSize));

@@ -5,8 +5,42 @@
     <groupId>org.nines</groupId>
     <artifactId>rdf-migration</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <name>ARC RDF Data Migration Tool</name>
+    <url>https://github.com/performant-software/rdf-migration/</url>
 
     <inceptionYear>2017</inceptionYear>
+
+    <organization>
+        <name>The Advanced Research Consortium - ARC</name>
+        <url>http://idhmcmain.tamu.edu/arcgrant/</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <id>gremid</id>
+            <name>Gregor Middell</name>
+            <email>gregor@middell.net</email>
+            <url>http://gregor.middell.net/</url>
+            <timezone>Europe/Berlin</timezone>
+            <organization>pagina GmbH</organization>
+            <organizationUrl>http://www.pagina.gmbh/</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:performant-software/${project.artifactId}.git</connection>
+        <developerConnection>scm:git:git@github.com:performant-software/${project.artifactId}.git</developerConnection>
+        <url>git@github.com:performant-software/${project.artifactId}.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -120,6 +154,45 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <header>com/mycila/maven/plugin/license/templates/APACHE-2.txt</header>
+                    <properties>
+                        <owner>${project.organization.name}</owner>
+                        <email>${project.organization.url}</email>
+                    </properties>
+                    <excludes>
+                        <exclude>**/pom.xml</exclude>
+                        <exclude>**/README.md</exclude>
+                        <exclude>**/LICENSE.txt</exclude>
+                        <exclude>**/checkstyle.xml</exclude>
+                        <exclude>**/.editorconfig</exclude>
+                        <exclude>src/test/resources/**</exclude>
+                        <exclude>src/main/resources/**</exclude>
+                    </excludes>
+                    <mapping>
+                        <java>SLASHSTAR_STYLE</java>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <configuration>
+                    <doctitle>${project.name} ${project.version}</doctitle>
+                    <show>public</show>
+                </configuration>
             </plugin>
         </plugins>
     </build>

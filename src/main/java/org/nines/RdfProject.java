@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.nines;
 
 import java.io.Closeable;
@@ -8,7 +23,7 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 /**
- * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
+ * A project containing ARC RDF/XML source material as represented by a checked-out Git repository.
  */
 public class RdfProject implements Closeable {
 
@@ -20,7 +35,8 @@ public class RdfProject implements Closeable {
         this.dotGit = git.repository.toPath().resolve(".git");
     }
 
-    public static RdfProject checkout(File workspace, Arc.GitLabProject gitLabProject) throws IOException {
+    public static RdfProject checkout(File workspace, Arc.GitLabProject gitLabProject)
+        throws IOException {
         return new RdfProject(Git.clone(workspace, gitLabProject));
     }
 
@@ -28,6 +44,13 @@ public class RdfProject implements Closeable {
         git.checkoutNewBranch(name);
         return this;
     }
+
+    /**
+     * Generates all RDF/XML files contained in the Git repository of this project.
+     *
+     * @return all RDF/XML files (those having the extension <code>.rdf</code> or <code>.xml</code>
+     * @throws IOException in case of an I/O error while walking the filesystem
+     */
     public File[] rdfFiles() throws IOException {
         return Files.walk(git.repository.toPath())
                 .filter(p -> !p.startsWith(dotGit))
@@ -37,6 +60,12 @@ public class RdfProject implements Closeable {
                 .toArray(File[]::new);
     }
 
+    /**
+     * Creates a new Git commit if there have been changes to the working tree.
+     *
+     * @param message the commit message
+     * @return <code>true</code> if a commit has been created
+     */
     public boolean commitIfChanged(String message) throws IOException {
         if (git.status().isEmpty()) {
             return false;

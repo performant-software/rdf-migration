@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2017 The Advanced Research Consortium - ARC (http://idhmcmain.tamu.edu/arcgrant/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.nines;
 
 import net.middell.XML;
@@ -25,7 +40,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPathExpression;
 
 /**
- * @author <a href="http://gregor.middell.net/">Gregor Middell</a>
+ * The DOM of an RDF/XML document.
  */
 public class RdfXmlDocument {
 
@@ -46,15 +61,32 @@ public class RdfXmlDocument {
         this.resourceIndex = resourceIndex(document);
     }
 
+    /**
+     * Serializes the DOM to a given file, removing empty text nodes and indenting the source
+     * in the process.
+     *
+     * @param rdf the destination file
+     */
     public void write(File rdf) throws TransformerException {
         XML.nodes(EMPTY_TEXT_NODES, document).forEach(n -> n.getParentNode().removeChild(n));
         XML.indentingTransformer(XML.newTransformer())
                 .transform(new DOMSource(document), new StreamResult(rdf));
     }
 
+    /**
+     * Adds a property/value assignment to a RDF subject.
+     *
+     * @param resource the RDF subject
+     * @param property the RDF property
+     * @param value the string literal expressing the value to add
+     */
     public void add(Resource resource, Property property, String value) {
-        final List<Element> elements = resourceIndex.getOrDefault(resource.getURI(), Collections.emptyList());
-        final Element element = elements.stream().findFirst().orElseThrow(IllegalArgumentException::new);
+        final List<Element> elements = resourceIndex.getOrDefault(
+            resource.getURI(), Collections.emptyList()
+        );
+
+        final Element element = elements.stream()
+            .findFirst().orElseThrow(IllegalArgumentException::new);
 
         element.appendChild(document.createElementNS(
                 property.getNameSpace(),
@@ -63,14 +95,30 @@ public class RdfXmlDocument {
 
     }
 
+    /**
+     * Removes all assignments of a given RDF property from a RDF subject.
+     *
+     * @param resource the RDF subject
+     * @param property the RDF property whose values are removed
+     */
     public void remove(Resource resource, Property property) {
         remove(resource, property, null);
     }
 
+    /**
+     * Removes assignments of a given RDF property from a RDF subject.
+     *
+     * @param resource the RDF subject
+     * @param property the RDF property
+     * @param value a specific value to be removed or <code>null</code> if all value assignments
+     *              shall be removed
+     */
     public void remove(Resource resource, Property property, String value) {
         final String ns = property.getNameSpace();
         final String ln = property.getLocalName();
-        final List<Element> elements = resourceIndex.getOrDefault(resource.getURI(), Collections.emptyList());
+        final List<Element> elements = resourceIndex.getOrDefault(
+            resource.getURI(), Collections.emptyList()
+        );
         for (Element element : elements) {
             final List<Element> removed = new ArrayList<>();
             for (Element propertyEl : XML.elements(XML.children(element))) {
@@ -116,6 +164,8 @@ public class RdfXmlDocument {
         return resourceIndex;
     }
 
-    private static final XPathExpression EMPTY_TEXT_NODES = XML.xpath("//text()[normalize-space(.) = '']");
+    private static final XPathExpression EMPTY_TEXT_NODES = XML.xpath(
+        "//text()[normalize-space(.) = '']"
+    );
 
 }
