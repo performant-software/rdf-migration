@@ -6,6 +6,7 @@
     <artifactId>rdf-migration</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>ARC RDF Data Migration Tool</name>
+    <description>Interpretes a DSL defining RDF data migration rules and applies those to a set of RDF/XML resources under version control</description>
     <url>https://github.com/performant-software/rdf-migration/</url>
 
     <inceptionYear>2017</inceptionYear>
@@ -134,6 +135,21 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-classpath</argument>
+                        <classpath/>
+                        <argument>org.nines.Migration</argument>
+                        <argument>${migration.rules}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>2.17</version>
