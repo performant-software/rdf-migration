@@ -15,49 +15,56 @@
  */
 package org.nines;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A project containing ARC RDF/XML source material as represented by a checked-out Git repository.
  */
-public class RdfProject implements Closeable {
+public class RdfProject {
 
-    private final Git git;
-    private final Path dotGit;
+    public final Git git;
+    public final Path dotGit;
 
     public RdfProject(Git git) {
         this.git = git;
         this.dotGit = git.repository.toPath().resolve(".git");
     }
 
-    public static RdfProject checkout(File workspace, Arc.GitLabProject gitLabProject)
-        throws IOException {
+    public static RdfProject checkout(File workspace, Arc.GitLabProject gitLabProject) {
         return new RdfProject(Git.clone(workspace, gitLabProject));
     }
 
-    public RdfProject withWorkingBranch(String name) throws IOException {
-        git.checkoutNewBranch(name);
+    /**
+     * Delegates to {@link Git#checkoutBranch(String, boolean) the git accessor method}.
+     */
+    public RdfProject withBranch(String branch, boolean create) {
+        git.checkoutBranch(branch, create);
         return this;
+
     }
 
     /**
      * Generates all RDF/XML files contained in the Git repository of this project.
      *
      * @return all RDF/XML files (those having the extension <code>.rdf</code> or <code>.xml</code>
-     * @throws IOException in case of an I/O error while walking the filesystem
      */
-    public File[] rdfFiles() throws IOException {
-        return Files.walk(git.repository.toPath())
-                .filter(p -> !p.startsWith(dotGit))
-                .filter(Files::isRegularFile)
-                .map(Path::toFile)
-                .filter(f -> RDF_FILE_EXTENSIONS.matcher(f.getName().toLowerCase()).find())
-                .toArray(File[]::new);
+    public Stream<File> rdfFiles() {
+        try {
+            return Files.walk(git.repository.toPath())
+                    .filter(p -> !p.startsWith(dotGit))
+                    .filter(Files::isRegularFile)
+                    .map(Path::toFile)
+                    .filter(f -> RDF_FILE_EXTENSIONS.matcher(f.getName().toLowerCase()).find());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -66,7 +73,7 @@ public class RdfProject implements Closeable {
      * @param message the commit message
      * @return <code>true</code> if a commit has been created
      */
-    public boolean commitIfChanged(String message) throws IOException {
+    public boolean commitIfChanged(String message) {
         if (git.status().isEmpty()) {
             return false;
         }
@@ -81,11 +88,6 @@ public class RdfProject implements Closeable {
     @Override
     public String toString() {
         return git.toString();
-    }
-
-    @Override
-    public void close() throws IOException {
-        //Util.deleteRecursively(repository);
     }
 
     private static final Pattern RDF_FILE_EXTENSIONS = Pattern.compile("\\.(rdf)|(xml)$");

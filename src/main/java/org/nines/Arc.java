@@ -74,13 +74,49 @@ public class Arc {
                 String.join(".", path, "git")
             );
         }
-        
+
+        /**
+         * Constructs a GitLab frontend URL for this project.
+         * @return a frontend URL, e.g. <code>https://gitlab.tamu.edu/test/project/</code>
+         */
+        public HttpUrl url() {
+            return new HttpUrl.Builder()
+                .scheme("https").host(GIT_LAB_HOST)
+                .addPathSegments(path)
+                .build();
+        }
+
+        /**
+         * Constructs a GitLab frontend URL for a file in this project.
+         *
+         * @param branch the branch to address
+         * @param path the path of the addressed file
+         * @return a frontend URL
+         */
+        public HttpUrl url(String branch, String path) {
+            return url().newBuilder()
+                .addPathSegment("tree").addPathSegment(branch)
+                .addPathSegments(path)
+                .build();
+        }
+
+        /**
+         * Constructs a GitLab frontend URL for a line in a file of this project.
+         *
+         * @param branch the branch to address
+         * @param path  the path of the addressed file
+         * @param lineNumber the line number
+         * @return a frontend URL
+         */
+        public HttpUrl url(String branch, String path, int lineNumber) {
+            return url(branch, path).newBuilder()
+                .fragment(String.format("L%s", lineNumber))
+                .build();
+        }
+
         @Override
         public String toString() {
-            return new HttpUrl.Builder()
-                    .scheme("https").host(GIT_LAB_HOST)
-                    .addPathSegments(path)
-                    .build().toString();
+            return url().toString();
         }
     }
 
@@ -138,7 +174,7 @@ public class Arc {
     public GitLabProject[] rdfRepositories() throws IOException {
         return gitLabProjects().stream()
                 .filter(gp -> gp.name.startsWith("arc_rdf"))
-                .sorted(Comparator.comparing((GitLabProject gp) -> gp.path).reversed())
+                .sorted(Comparator.comparing((GitLabProject gp) -> gp.path))
                 .toArray(GitLabProject[]::new);
     }
 

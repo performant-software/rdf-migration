@@ -27,7 +27,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -68,8 +67,8 @@ public class Migration {
     @Override
     public String toString() {
         return Stream.of(rules)
-                .map(Rule::toString)
-                .collect(Collectors.joining("\n"));
+            .map(Rule::toString)
+            .collect(Collectors.joining("\n"));
     }
 
     /**
@@ -119,7 +118,7 @@ public class Migration {
      * Applies this rule set to a RDF model.
      *
      * @param model the RDF model
-     * @param xml the model as expressed in its source RDF/XML
+     * @param xml   the model as expressed in its source RDF/XML
      * @return <code>true</code> if the model has been changed by this rule set
      */
     public boolean apply(Model model, RdfXmlDocument xml) {
@@ -172,57 +171,52 @@ public class Migration {
 
         final long start = System.currentTimeMillis();
 
-        final File migrationFile = Stream.of(args).map(File::new)
-                .filter(File::isFile)
-                .findFirst().orElseThrow(IllegalArgumentException::new);
-
-        final File workspace = Files.createTempDirectory(Migration.class.getName()).toFile();
+        final File migrationFile = Stream.of(args)
+            .findFirst()
+            .map(File::new)
+            .filter(File::isFile)
+            .orElseThrow(IllegalArgumentException::new);
 
         final Migration migration = Migration.parse(migrationFile);
         log.fine(() -> String.format("%s:\n%s", migrationFile, migration));
 
         final String featureBranchName = String.format(
-                "feature/rdf-migration-%s",
-                FEATURE_BRANCH_TIMESTAMP.format(LocalDateTime.now(EASTERN_STANDARD_TIME))
+            "feature/rdf-migration-%s",
+            FEATURE_BRANCH_TIMESTAMP.format(LocalDateTime.now(EASTERN_STANDARD_TIME))
         );
 
-        int skip = 1;
-        int limit = 1;
-        for (Arc.GitLabProject gitLabProject : new Arc().rdfRepositories()) {
-            if (skip-- > 0) {
-                continue;
-            }
-            if (limit-- == 0) {
-                break;
-            }
-            try (RdfProject rdfProject = RdfProject.checkout(workspace, gitLabProject)) {
-                rdfProject.withWorkingBranch(featureBranchName);
+        new Workspace(new Arc()).projects()
+            .parallel()
+            .forEach(rdfProject -> {
+                rdfProject.withBranch(featureBranchName, true);
 
-                final File[] rdfFiles = rdfProject.rdfFiles();
-                for (File rdfFile : rdfFiles) {
-                    RdfXmlDocument.format(rdfFile);
-                }
+                rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
+                    try {
+                        RdfXmlDocument.format(rdfFile);
+                    } catch (IOException | SAXException | TransformerException e) {
+                        log.log(Level.WARNING, e, rdfFile::toString);
+                    }
+
+                });
 
                 rdfProject.commitIfChanged(join(" | ", migration.title, "RDF/XML formatting"));
-                
-                for (File rdfFile : rdfFiles) {
+
+                rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
                     try {
                         if (migration.apply(rdfFile)) {
                             log.fine(() -> String.format("! %s", rdfFile.getAbsolutePath()));
                         }
-                    } catch (JenaException e) {
+                    } catch (IOException | SAXException | TransformerException | JenaException e) {
                         log.log(Level.WARNING, e, rdfFile::toString);
                     }
-                }
 
-                if (rdfProject.commitIfChanged(join(" | ", migration.title, "RDF migration"))) {
-                    rdfProject.push();
-                    log.info(() -> String.format("! %s", gitLabProject));
-                }
-            }
-        }
+                    if (rdfProject.commitIfChanged(join(" | ", migration.title, "RDF migration"))) {
+                        //rdfProject.push();
+                        log.info(() -> String.format("! %s", rdfProject));
+                    }
+                });
 
-        workspace.delete();
+            });
 
         final long end = System.currentTimeMillis();
 

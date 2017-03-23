@@ -17,6 +17,7 @@ package org.nines;
 
 import okhttp3.OkHttpClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -123,5 +124,19 @@ public class Util {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+    /**
+     * Ensures a given directory exists by optionally creating it.
+     *
+     * @param directory the directory
+     * @return the existing directory
+     * @throws IllegalStateException in case the directory cannot be created
+     */
+    public static File existingDirectory(File directory) {
+        if (!directory.isDirectory() &&  !directory.mkdirs()) {
+            throw new IllegalStateException(directory.toString());
+        }
+        return directory;
     }
 }
