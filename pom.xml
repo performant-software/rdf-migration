@@ -150,7 +150,6 @@
                         <argument>-classpath</argument>
                         <classpath/>
                         <argument>org.nines.Migration</argument>
-                        <argument>${migration.rules}</argument>
                     </arguments>
                 </configuration>
             </plugin>

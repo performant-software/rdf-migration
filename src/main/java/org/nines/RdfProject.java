@@ -50,6 +50,10 @@ public class RdfProject {
 
     }
 
+    public void reset() {
+        git.reset();
+    }
+
     /**
      * Generates all RDF/XML files contained in the Git repository of this project.
      *

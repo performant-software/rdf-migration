@@ -6,9 +6,7 @@ resources under version control.
 ## Code Example
 
     
-    GITLAB_PRIVATE_TOKEN="..."\
-        mvn exec:exec\
-        -Dmigration.rules=src/test/resources/migration-rules/modnets-refactoring.xml
+    ARC_RDF_WORKSPACE="..." ARC_PROJECTS="..." GITLAB_PRIVATE_TOKEN="..." mvn exec:exec
         
 ## Motivation
 

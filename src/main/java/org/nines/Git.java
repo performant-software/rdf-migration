@@ -78,6 +78,10 @@ public class Git {
         execute(command);
     }
 
+    public String reset() {
+        return execute("git", "checkout", "--", ".");
+    }
+
     public String status() {
         return execute("git", "status", "--porcelain");
     }

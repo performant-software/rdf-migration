@@ -15,24 +15,37 @@
  */
 package org.nines;
 
+import au.com.bytecode.opencsv.CSVWriter;
 import net.middell.XML;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.shared.JenaException;
+import org.apache.jena.vocabulary.DC;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -56,6 +69,7 @@ public class Migration {
     private static final DateTimeFormatter FEATURE_BRANCH_TIMESTAMP = DateTimeFormatter
         .ofPattern("yyyyMMddHHmm");
     private static final ZoneId EASTERN_STANDARD_TIME = ZoneId.of("EST", ZoneId.SHORT_IDS);
+    public static final String RULES_RESOURCE = "/migration-rules/modnets-refactoring.xml";
 
     private final String title;
     private final Rule[] rules;
@@ -147,13 +161,7 @@ public class Migration {
     public boolean apply(File rdf)
         throws IOException, SAXException, TransformerException, JenaException {
 
-        final RdfXmlDocument xml = new RdfXmlDocument(rdf);
-        final Model model = RdfXmlDocument.model(rdf);
-        if (apply(model, xml)) {
-            xml.write(rdf);
-            return true;
-        }
-        return false;
+        return apply(rdf, new RdfXmlDocument(rdf), RdfXmlDocument.model(rdf));
     }
 
     public boolean apply(File rdf, RdfXmlDocument xml, Model model) throws TransformerException {
@@ -167,27 +175,26 @@ public class Migration {
     /**
      * Entry point into the migration tool.
      *
-     * <p>A migration rule set is read from a file passed on the command line and applied to
-     * all RDF/XML sources contained in ARC's GitLab projects.
+     * <p>A migration rule set is read from the classpath and applied to
+     * all RDF/XML sources contained in ARC's GitLab, optionally limited to some projects.
      *
-     * @see Migration#parse(File)
+     * @see Migration#parse(Document)
      * @see Arc#rdfRepositories()
      * @see Migration#apply(File)
      */
     public static void main(String[] args) throws Exception {
+        final long start = System.currentTimeMillis();
+
         Logging.configure();
         final Logger log = Logging.forClass(Migration.class);
 
-        final long start = System.currentTimeMillis();
+        Document migrationXml;
+        try (InputStream rulesStream = Migration.class.getResourceAsStream(RULES_RESOURCE)) {
+            migrationXml = XML.newDocumentBuilder().parse(rulesStream);
+        }
 
-        final File migrationFile = Stream.of(args)
-            .findFirst()
-            .map(File::new)
-            .filter(File::isFile)
-            .orElseThrow(IllegalArgumentException::new);
-
-        final Migration migration = Migration.parse(migrationFile);
-        log.fine(() -> String.format("%s:\n%s", migrationFile, migration));
+        final Migration migration = Migration.parse(migrationXml);
+        log.fine(() -> String.format("< %s", migration));
 
         final String featureBranchName = String.format(
             "feature/rdf-migration-%s",
@@ -195,10 +202,13 @@ public class Migration {
         );
 
         new Workspace(new Arc()).projects()
-            .filter(rdfProject -> rdfProject.git.gitLabProject.name.contains("arc_rdf_Pfaffs"))
+            .filter(projectFilter())
             .parallel()
             .forEach(rdfProject -> {
+
+                rdfProject.reset();
                 //rdfProject.withBranch(featureBranchName, true);
+
                 rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
                     try {
                         RdfXmlDocument.format(rdfFile);
@@ -210,16 +220,46 @@ public class Migration {
 
                 //rdfProject.commitIfChanged(join(" | ", migration.title, "RDF/XML formatting"));
 
-                rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
+                final List<String[]> errors = rdfProject.rdfFiles().parallel().flatMap(rdfFile -> {
                     try {
                         if (migration.apply(rdfFile)) {
                             log.fine(() -> String.format("! %s", rdfFile.getAbsolutePath()));
                         }
 
+                        return RdfXmlDocument.model(rdfFile)
+                            .listSubjects().filterDrop(RDFNode::isAnon).toList().parallelStream()
+                            .map(subject -> Stream.of(Schema.validate(rdfProject, subject))
+                                .filter(error -> error.value != null && error.property != null && ERROR_FOCUS.contains(error.property))
+                                .map(error -> {
+                                final String path = rdfProject.git.relativize(rdfFile.toPath()).toString();
+                                return new String[]{
+                                    path,
+                                    error.resource.toString(),
+                                    Optional.ofNullable(error.property).map(Property::toString).orElse(""),
+                                    Optional.ofNullable(error.value).map(RDFNode::toString).orElse(""),
+                                    error.message,
+                                    rdfProject.git.gitLabProject.url("master", path).toString()
+
+                                };
+                            }).toArray(String[][]::new));
+
                     } catch (IOException | SAXException | TransformerException | JenaException e) {
                         log.log(Level.WARNING, e, rdfFile::toString);
+                        return Stream.empty();
                     }
-                });
+                }).sequential().flatMap(Stream::of).collect(Collectors.toList());
+
+                if (errors.isEmpty()) {
+                    return;
+                }
+
+                final String errorCsv = String.format("schema-errors-%s.csv", rdfProject.git.gitLabProject.name);
+                try (CSVWriter csv = new CSVWriter(Files.newBufferedWriter(Paths.get(errorCsv)))) {
+                    csv.writeNext(new String[] { "File", "Resource", "Property", "Value", "Error", "Link" });
+                    errors.forEach(csv::writeNext);
+                } catch (IOException e) {
+                    log.log(Level.WARNING, e, rdfProject::toString);
+                }
 
                 /*
                 if (rdfProject.commitIfChanged(join(" | ", migration.title, "RDF migration"))) {
@@ -230,10 +270,23 @@ public class Migration {
             });
 
         final long end = System.currentTimeMillis();
-
         log.info(() -> String.format(". %s", Duration.ofMillis(end - start)));
     }
 
-    private static final Pattern ERROR_FOCUS = Pattern.compile("((genre)|(discipline)|(type)) not approved", Pattern.CASE_INSENSITIVE);
+    private static Predicate<RdfProject> projectFilter() {
+        final String arcProjectsEnv = Optional.ofNullable(System.getenv("ARC_PROJECTS"))
+            .orElse("");
 
+        final Set<String> projects = Pattern.compile("\\s+").splitAsStream(arcProjectsEnv)
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .collect(Collectors.toSet());
+
+        return projects.isEmpty()
+            ? (p -> true)
+            : (p -> projects.contains(p.git.gitLabProject.name));
+    }
+
+    private static final Set<Property> ERROR_FOCUS = new HashSet<>(Arrays.asList(
+        Collex.genre, Collex.discipline, DC.type
+    ));
 }
