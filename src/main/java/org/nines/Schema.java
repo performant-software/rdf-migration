@@ -85,7 +85,7 @@ public class Schema {
 
     public static List<Error> validateUri(Resource resource) {
         return resource.listProperties(RDFS.seeAlso)
-            .filterDrop(stmt -> !stmt.getObject().asResource().getURI().startsWith("file:"))
+            .filterDrop(stmt -> stmt.getObject().isResource() && !stmt.getObject().asResource().getURI().startsWith("file:"))
             .mapWith(stmt -> new Error(stmt, "URI not resolved properly"))
             .toList();
     }

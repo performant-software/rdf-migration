@@ -104,7 +104,7 @@ public class PropertyValue {
 
     private boolean hasProperty(Resource resource) {
         for (final StmtIterator it = resource.listProperties(property); it.hasNext(); ) {
-            if (value.equals(it.next().getObject().asLiteral().getString())) {
+            if (value.equals(it.next().getObject().asLiteral().getString().trim())) {
                 return true;
             }
         }

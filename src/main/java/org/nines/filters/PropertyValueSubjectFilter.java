@@ -37,7 +37,7 @@ public class PropertyValueSubjectFilter implements SubjectFilter {
     @Override
     public boolean appliesTo(Resource resource) {
         return resource.listProperties(propertyValue.property)
-                .mapWith(stmt -> stmt.getObject().asLiteral().getString())
+                .mapWith(stmt -> stmt.getObject().asLiteral().getString().trim())
                 .filterKeep(propertyValue.value::equals)
                 .hasNext();
     }

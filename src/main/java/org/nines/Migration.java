@@ -143,10 +143,10 @@ public class Migration {
             for (Rule rule : rules) {
                 final boolean applied = rule.apply(subject, xml);
                 if (applied) {
-                    LOG.fine(() -> String.format("! %s (%s)", subject, rule));
+                    LOG.finer(() -> String.format("! %s (%s)", subject, rule));
                     modelChanged = true;
                 } else {
-                    LOG.finer(() -> String.format(". %s (%s)", subject, rule));
+                    LOG.finest(() -> String.format(". %s (%s)", subject, rule));
                 }
             }
         }
@@ -209,6 +209,7 @@ public class Migration {
                 rdfProject.reset();
                 //rdfProject.withBranch(featureBranchName, true);
 
+                /*
                 rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
                     try {
                         RdfXmlDocument.format(rdfFile);
@@ -217,7 +218,7 @@ public class Migration {
                     }
 
                 });
-
+                */
                 //rdfProject.commitIfChanged(join(" | ", migration.title, "RDF/XML formatting"));
 
                 final List<String[]> errors = rdfProject.rdfFiles().parallel().flatMap(rdfFile -> {
