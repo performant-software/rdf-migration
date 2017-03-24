@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.transform.TransformerException;
@@ -147,7 +148,15 @@ public class Migration {
         throws IOException, SAXException, TransformerException, JenaException {
 
         final RdfXmlDocument xml = new RdfXmlDocument(rdf);
-        final Model model = ModelFactory.createDefaultModel().read(rdf.toURI().toURL().toString());
+        final Model model = RdfXmlDocument.model(rdf);
+        if (apply(model, xml)) {
+            xml.write(rdf);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean apply(File rdf, RdfXmlDocument xml, Model model) throws TransformerException {
         if (apply(model, xml)) {
             xml.write(rdf);
             return true;
@@ -186,10 +195,10 @@ public class Migration {
         );
 
         new Workspace(new Arc()).projects()
+            .filter(rdfProject -> rdfProject.git.gitLabProject.name.contains("arc_rdf_Pfaffs"))
             .parallel()
             .forEach(rdfProject -> {
-                rdfProject.withBranch(featureBranchName, true);
-
+                //rdfProject.withBranch(featureBranchName, true);
                 rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
                     try {
                         RdfXmlDocument.format(rdfFile);
@@ -199,27 +208,32 @@ public class Migration {
 
                 });
 
-                rdfProject.commitIfChanged(join(" | ", migration.title, "RDF/XML formatting"));
+                //rdfProject.commitIfChanged(join(" | ", migration.title, "RDF/XML formatting"));
 
                 rdfProject.rdfFiles().parallel().forEach(rdfFile -> {
                     try {
                         if (migration.apply(rdfFile)) {
                             log.fine(() -> String.format("! %s", rdfFile.getAbsolutePath()));
                         }
+
                     } catch (IOException | SAXException | TransformerException | JenaException e) {
                         log.log(Level.WARNING, e, rdfFile::toString);
                     }
-
-                    if (rdfProject.commitIfChanged(join(" | ", migration.title, "RDF migration"))) {
-                        //rdfProject.push();
-                        log.info(() -> String.format("! %s", rdfProject));
-                    }
                 });
 
+                /*
+                if (rdfProject.commitIfChanged(join(" | ", migration.title, "RDF migration"))) {
+                    //rdfProject.push();
+                    log.info(() -> String.format("! %s", rdfProject));
+                }
+                */
             });
 
         final long end = System.currentTimeMillis();
 
         log.info(() -> String.format(". %s", Duration.ofMillis(end - start)));
     }
+
+    private static final Pattern ERROR_FOCUS = Pattern.compile("((genre)|(discipline)|(type)) not approved", Pattern.CASE_INSENSITIVE);
+
 }

@@ -15,35 +15,241 @@
  */
 package org.nines;
 
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.vocabulary.DC;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * ARC's RDF schema definition, specifically the set of singleton properties.
  */
 public class Schema {
 
+    public static List<String> validate(RdfProject project, Resource resource) {
+        final List<String> messages = new ArrayList<>();
+
+        if (!project.git.gitLabProject.name.contains("pages_")) {
+            messages.addAll(validateRequired(resource));
+            messages.addAll(validateGenre(resource));
+            messages.addAll(validateDiscipline(resource));
+            messages.addAll(validateRole(resource));
+            messages.addAll(validateType(resource));
+            messages.addAll(validateUri(resource));
+        } else {
+            messages.addAll(validatePagesRequired(resource));
+            messages.addAll(validateUri(resource));
+        }
+
+        return messages;
+    }
+
+    public static List<String> validateRole(Resource resource) {
+        return resource.listProperties()
+            .mapWith(Statement::getPredicate)
+            .filterKeep(p -> LocRelators.uri.equals(p.getNameSpace()))
+            .filterDrop(VALID_ROLES::contains)
+            .mapWith(p -> "invalid role: " + p)
+            .toList();
+    }
+
+    public static List<String> validateUri(Resource resource) {
+        final boolean invalidUri = resource.listProperties(RDFS.seeAlso)
+            .mapWith(Statement::getObject)
+            .mapWith(RDFNode::asResource)
+            .mapWith(Resource::getURI)
+            .filterKeep(uri -> uri.startsWith("http://foo/"))
+            .hasNext();
+
+        return invalidUri
+            ? Collections.singletonList("URI field is not created properly")
+            : Collections.emptyList();
+    }
+
+    private static void maxOne(Property property, Resource resource, List<String> messages) {
+        final int cardinality = resource.listProperties(property).toSet().size();
+        if (cardinality > 1) {
+            messages.add("must not contain more than one " + property);
+        }
+    }
+
+    /**
+     * Confirms that required fields for PAGES archives are present and non-null
+     */
+    public static List<String> validatePagesRequired(Resource resource) {
+        ArrayList<String> messages = new ArrayList<>();
+
+        REQUIRED_PAGE_PROPERTIES.stream()
+            .filter(p -> !resource.hasProperty(p))
+            .map(p -> "object must have the property " + p)
+            .forEach(messages::add);
+
+
+        final boolean emptyText = resource.listProperties(Collex.text)
+            .mapWith(Statement::getObject)
+            .mapWith(RDFNode::asLiteral)
+            .mapWith(Literal::getString)
+            .filterKeep(String::isEmpty)
+            .hasNext();
+
+        if (emptyText) {
+            messages.add("Warning - collex:text is blank");
+        }
+
+        return messages;
+    }
+
+    /**
+     * Confirms that required fields are present and non-null
+     */
+    public static List<String> validateRequired(Resource resource) {
+        final List<String> messages = new ArrayList<>();
+
+        REQUIRED_PROPERTIES.stream()
+            .filter(p -> !resource.hasProperty(p))
+            .map(p -> "object must have " + p)
+            .forEach(messages::add);
+
+        maxOne(Collex.archive, resource, messages);
+        maxOne(DC.title, resource, messages);
+        maxOne(RDFS.seeAlso, resource, messages);
+
+        final boolean hasRole = resource.listProperties()
+            .mapWith(Statement::getPredicate)
+            .mapWith(Property::getNameSpace)
+            .filterKeep(LocRelators.uri::equals)
+            .hasNext();
+
+        if (!hasRole) {
+            messages.add("object must contain at least one role:XXX field");
+        }
+
+        return messages;
+    }
+
+    /**
+     * The genre must be in a constrained list.
+     */
+    public static List<String> validateGenre(Resource resource) {
+        return resource.listProperties(Collex.genre)
+            .mapWith(Statement::getObject)
+            .mapWith(RDFNode::asLiteral)
+            .mapWith(Literal::getString)
+            .filterDrop(VALID_GENRES::contains)
+            .mapWith(genre -> genre + " genre not approved by ARC")
+            .toList();
+    }
+
+    /**
+     * The genre must be in a constrained list.
+     */
+    public static List<String> validateDiscipline(Resource resource) {
+        return resource.listProperties(Collex.discipline)
+            .mapWith(Statement::getObject)
+            .mapWith(RDFNode::asLiteral)
+            .mapWith(Literal::getString)
+            .filterDrop(VALID_DISCIPLINES::contains)
+            .mapWith(genre -> genre + " discipline not approved by ARC")
+            .toList();
+    }
+
+    /**
+     * The genre must be in a constrained list.
+     */
+    public static List<String> validateType(Resource resource) {
+        return resource.listProperties(DC.type)
+            .mapWith(Statement::getObject)
+            .mapWith(RDFNode::asLiteral)
+            .mapWith(Literal::getString)
+            .filterDrop(VALID_TYPES::contains)
+            .mapWith(genre -> genre + " type not approved by ARC")
+            .toList();
+    }
+
     public static final Set<Property> SINGLETON_PROPERTIES = new HashSet<>(Arrays.asList(
-            Collex.archive,
-            DC.title,
-            DC.language,
-            Collex.date,
-            RDFS.label,
-            RDF.value,
-            Collex.freeculture,
-            Collex.source_xml,
-            Collex.source_html,
-            Collex.source_sgml,
-            Collex.text,
-            Collex.image,
-            Collex.thumbnail,
-            Collex.ocr,
-            Collex.fulltext
+        Collex.archive,
+        DC.title,
+        DC.language,
+        Collex.date,
+        RDFS.label,
+        RDF.value,
+        Collex.freeculture,
+        Collex.source_xml,
+        Collex.source_html,
+        Collex.source_sgml,
+        Collex.text,
+        Collex.image,
+        Collex.thumbnail,
+        Collex.ocr,
+        Collex.fulltext
     ));
+
+    public static final Set<String> VALID_TYPES = new HashSet<>(Arrays.asList(
+        "Codex", "Collection", "Dataset", "Drawing", "Illustration", "Interactive Resource", "Manuscript", "Map", "Moving Image",
+        "Notated Music", "Page Proofs", "Pamphlet", "Periodical", "Physical Object", "Roll", "Sheet", "Sound", "Still Image", "Typescript"
+    ));
+
+    public static final Set<String> VALID_GENRES = new HashSet<>(Arrays.asList(
+        "Advertisement", "Animation", "Bibliography", "Catalog", "Chronology", "Citation", "Collection",
+        "Correspondence", "Criticism", "Drama", "Ephemera", "Essay", "Fiction", "Film, Documentary",
+        "Film, Experimental", "Film, Narrative", "Film, Other", "Historiography", "Interview", "Life Writing",
+        "Liturgy", "Musical Analysis", "Music, Other", "Musical Work", "Musical Score", "Nonfiction", "Paratext",
+        "Performance", "Philosophy", "Photograph", "Political Statement", "Poetry", "Religion", "Reference Works",
+        "Review", "Scripture", "Sermon", "Speech", "Translation", "Travel Writing", "Unspecified", "Visual Art"
+    ));
+
+    public static final Set<String> VALID_DISCIPLINES = new HashSet<>(Arrays.asList(
+        "Anthropology", "Archaeology", "Art History", "Art Studies", "Book History", "Classics and Ancient History",
+        "Dance Studies", "Economics", "Education", "Ethnic Studies", "Film Studies", "Gender Studies", "Geography",
+        "History", "Labor Studies", "Law", "Literature", "Manuscript Studies", "Math", "Music Studies", "Philosophy",
+        "Political Science", "Religious Studies", "Science", "Sociology", "Sound Studies", "Theater Studies"
+    ));
+
+    public static final Set<Property> VALID_ROLES = Arrays.asList(
+        "role_ABR", "role_ACP", "role_ACT", "role_ADI", "role_ADP", "role_AFT", "role_ANL", "role_ANM", "role_ANN", "role_ANT",
+        "role_APE", "role_APL", "role_APP", "role_AQT", "role_ARC", "role_ARD", "role_ARR", "role_ART", "role_ASG", "role_ASN",
+        "role_ATO", "role_ATT", "role_AUC", "role_AUD", "role_AUI", "role_AUS", "role_AUT", "role_BDD", "role_BJD", "role_BKD",
+        "role_BKP", "role_BLW", "role_BND", "role_BPD", "role_BRD", "role_BRL", "role_BSL", "role_CAS", "role_CCP", "role_CHR",
+        "role_CLI", "role_CLL", "role_CLR", "role_CLT", "role_CMM", "role_CMP", "role_CMT", "role_CND", "role_CNG", "role_CNS",
+        "role_COE", "role_COL", "role_COM", "role_CON", "role_COR", "role_COS", "role_COT", "role_COU", "role_COV", "role_CPC",
+        "role_CPE", "role_CPH", "role_CPL", "role_CPT", "role_CRE", "role_CRP", "role_CRR", "role_CRT", "role_CSL", "role_CSP",
+        "role_CST", "role_CTB", "role_CTE", "role_CTG", "role_CTR", "role_CTS", "role_CTT", "role_CUR", "role_CWT", "role_DBP",
+        "role_DFD", "role_DFE", "role_DFT", "role_DGG", "role_DGS", "role_DIS", "role_DLN", "role_DNC", "role_DNR", "role_DPC",
+        "role_DPT", "role_DRM", "role_DRT", "role_DSR", "role_DST", "role_DTC", "role_DTE", "role_DTM", "role_DTO", "role_DUB",
+        "role_EDC", "role_EDM", "role_EDT", "role_EGR", "role_ELG", "role_ELT", "role_ENG", "role_ENJ", "role_ETR", "role_EVP",
+        "role_EXP", "role_FAC", "role_FDS", "role_FLD", "role_FLM", "role_FMD", "role_FMK", "role_FMO", "role_FMP", "role_FND",
+        "role_FPY", "role_FRG", "role_GIS", "role_HIS", "role_HNR", "role_HST", "role_ILL", "role_ILU", "role_INS", "role_INV",
+        "role_ISB", "role_ITR", "role_IVE", "role_IVR", "role_JUD", "role_JUG", "role_LBR", "role_LBT", "role_LDR", "role_LED",
+        "role_LEE", "role_LEL", "role_LEN", "role_LET", "role_LGD", "role_LIE", "role_LIL", "role_LIT", "role_LSA", "role_LSE",
+        "role_LSO", "role_LTG", "role_LYR", "role_MCP", "role_MDC", "role_MED", "role_MFP", "role_MFR", "role_MOD", "role_MON",
+        "role_MRB", "role_MRK", "role_MSD", "role_MTE", "role_MTK", "role_MUS", "role_NRT", "role_OPN", "role_ORG", "role_ORM",
+        "role_OSP", "role_OTH", "role_OWN", "role_PAN", "role_PAT", "role_PBD", "role_PBL", "role_PDR", "role_PFR", "role_PHT",
+        "role_PLT", "role_PMA", "role_PMN", "role_POP", "role_PPM", "role_PPT", "role_PRA", "role_PRC", "role_PRD", "role_PRE",
+        "role_PRF", "role_PRG", "role_PRM", "role_PRN", "role_PRO", "role_PRP", "role_PRS", "role_PRT", "role_PRV", "role_PTA",
+        "role_PTE", "role_PTF", "role_PTH", "role_PTT", "role_PUP", "role_RBR", "role_RCD", "role_RCE", "role_RCP", "role_RDD",
+        "role_RED", "role_REN", "role_RES", "role_REV", "role_RPC", "role_RPS", "role_RPT", "role_RPY", "role_RSE", "role_RSG",
+        "role_RSP", "role_RSR", "role_RST", "role_RTH", "role_RTM", "role_SAD", "role_SCE", "role_SCL", "role_SCR", "role_SDS",
+        "role_SEC", "role_SGD", "role_SGN", "role_SHT", "role_SLL", "role_SNG", "role_SPK", "role_SPN", "role_SPY", "role_SRV",
+        "role_STD", "role_STG", "role_STL", "role_STM", "role_STN", "role_STR", "role_TCD", "role_TCH", "role_THS", "role_TLD",
+        "role_TLP", "role_TRC", "role_TRL", "role_TYD", "role_TYG", "role_UVP", "role_VAC", "role_VDG", "role_WAC", "role_WAL",
+        "role_WAM", "role_WAT", "role_WDC", "role_WDE", "role_WIN", "role_WIT", "role_WPR", "role_WST"
+    ).stream().map(role -> role.substring("role_".length())).map(LocRelators::property).collect(Collectors.toSet());
+
+    public static final Set<Property> REQUIRED_PROPERTIES = new HashSet<>(Arrays.asList(
+        Collex.archive, DC.title, DC.date, DC.type, RDFS.seeAlso,
+        Collex.genre, Collex.discipline, Collex.freeculture, Collex.fulltext, Collex.ocr, Collex.federation
+    ));
+
+    public static final Set<Property> REQUIRED_PAGE_PROPERTIES = new HashSet<>(Arrays.asList(Collex.text, Collex.pageof, Collex.pagenum ));
 }

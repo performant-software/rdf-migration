@@ -16,6 +16,8 @@
 package org.nines;
 
 import net.middell.XML;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDF;
@@ -28,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +49,14 @@ public class RdfXmlDocument {
 
     public final Document document;
     public final Map<String, List<Element>> resourceIndex;
+
+    public static Model model(File file) {
+        try {
+            return ModelFactory.createDefaultModel().read(file.toURI().toURL().toString());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static File format(File file) throws IOException, SAXException, TransformerException {
         new RdfXmlDocument(file).write(file);

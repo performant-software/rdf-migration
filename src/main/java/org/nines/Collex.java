@@ -30,7 +30,10 @@ public class Collex {
     }
 
     public static final Property archive = property("archive");
+    public static final Property federation = property("federation");
     public static final Property date = property("date");
+    public static final Property genre = property("genre") ;
+    public static final Property discipline = property("discipline");
     public static final Property freeculture = property("freeculture");
     public static final Property source_xml = property("source_xml");
     public static final Property source_html = property("source_html");
@@ -40,5 +43,8 @@ public class Collex {
     public static final Property thumbnail = property("thumbnail");
     public static final Property ocr = property("ocr");
     public static final Property fulltext = property("fulltext");
+    public static final Property pageof = property("pageof");
+    public static final Property pagenum = property("pagenum");
+
 
 }
