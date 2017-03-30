@@ -189,7 +189,7 @@ public class Schema {
     ));
 
     public static final Set<String> VALID_DISCIPLINES = new HashSet<>(Arrays.asList(
-        "Anthropology", "Archaeology", "Art History", "Art Studies", "Book History",
+        "Anthropology", "Archaeology", "Architecture", "Art History", "Art Studies", "Book History",
         "Classics and Ancient History", "Dance Studies", "Economics", "Education", "Ethnic Studies",
         "Film Studies", "Gender Studies", "Geography", "History", "Labor Studies", "Law",
         "Literature", "Manuscript Studies", "Math", "Music Studies", "Philosophy",
