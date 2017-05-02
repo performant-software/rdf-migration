@@ -18,6 +18,7 @@ package org.nines;
 import org.apache.jena.rdf.model.Resource;
 import org.nines.filters.AllOfSubjectFilter;
 import org.nines.filters.AnyOfSubjectFilter;
+import org.nines.filters.MultiValueSubjectFilter;
 import org.nines.filters.NoneOfSubjectFilter;
 import org.nines.filters.PropertyValueSubjectFilter;
 import org.nines.filters.SubjectFilter;
@@ -118,6 +119,8 @@ public class Rule {
                 subjectFilters.add(new AllOfSubjectFilter(parseSubjectFilter(el)));
             } else if (isMigrationElement(el, "noneOf")) {
                 subjectFilters.add(new NoneOfSubjectFilter(parseSubjectFilter(el)));
+            } else if (isMigrationElement(el, "multiValued")) {
+                subjectFilters.add(new MultiValueSubjectFilter(parseSubjectFilter(el)));
             } else {
                 subjectFilters.add(new PropertyValueSubjectFilter(new PropertyValue(el)));
             }

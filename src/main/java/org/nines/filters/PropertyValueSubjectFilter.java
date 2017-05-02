@@ -23,7 +23,7 @@ import org.nines.PropertyValue;
  */
 public class PropertyValueSubjectFilter implements SubjectFilter {
 
-    private final PropertyValue propertyValue;
+    public final PropertyValue propertyValue;
 
     public PropertyValueSubjectFilter(PropertyValue propertyValue) {
         this.propertyValue = propertyValue;

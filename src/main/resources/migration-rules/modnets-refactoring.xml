@@ -26,6 +26,47 @@
 
     <rule>
         <subjects>
+            <multiValued>
+                <collex:genre>Primary</collex:genre>
+            </multiValued>
+        </subjects>
+        <removeProperties>
+            <collex:genre>Primary</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <multiValued>
+                <collex:genre>Secondary</collex:genre>
+            </multiValued>
+        </subjects>
+        <removeProperties>
+            <collex:genre>Secondary</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <collex:genre/>
+        </subjects>
+        <addProperties>
+            <collex:genre>Unspecified</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:genre/>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <multiValued>
+                <collex:genre>Unspecified</collex:genre>
+            </multiValued>
+        </subjects>
+        <removeProperties>
+            <collex:genre>Unspecified</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
             <collex:genre>Architecture</collex:genre>
         </subjects>
         <addProperties>
@@ -53,6 +94,19 @@
         </addProperties>
         <removeProperties>
             <collex:genre>Book History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <multiValued>
+                <collex:genre>Ethnic Studies</collex:genre>
+            </multiValued>
+        </subjects>
+        <addProperties>
+            <collex:discipline>Ethnic Studies</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>Ethnic Studies</collex:genre>
         </removeProperties>
     </rule>
     <rule>
@@ -97,30 +151,9 @@
     </rule>
     <rule>
         <subjects>
-            <noneOf>
-                <collex:genre>Bibliography</collex:genre>
-                <collex:genre>Catalog</collex:genre>
-                <collex:genre>Citation</collex:genre>
-                <collex:genre>Collection</collex:genre>
-                <collex:genre>Criticism</collex:genre>
-                <collex:genre>Drama</collex:genre>
-                <collex:genre>Ephemera</collex:genre>
-                <collex:genre>Fiction</collex:genre>
-                <collex:genre>Leisure</collex:genre>
-                <collex:genre>Letters</collex:genre>
-                <collex:genre>Life Writing</collex:genre>
-                <collex:genre>Music</collex:genre>
-                <collex:genre>Nonfiction</collex:genre>
-                <collex:genre>Photograph</collex:genre>
-                <collex:genre>Periodical</collex:genre>
-                <collex:genre>Poetry</collex:genre>
-                <collex:genre>Religion</collex:genre>
-                <collex:genre>Review</collex:genre>
-                <collex:genre>Translation</collex:genre>
-                <collex:genre>Travel</collex:genre>
-                <collex:genre>Visual Art</collex:genre>
-            </noneOf>
-            <collex:genre>History</collex:genre>
+            <multiValued>
+                <collex:genre>History</collex:genre>
+            </multiValued>
             <role:AUT>The Vault at Pfaff's</role:AUT>
         </subjects>
         <addProperties>
@@ -299,6 +332,17 @@
 
     <!-- =============== GENERAL RULES =============== -->
 
+    <rule>
+        <subjects>
+            <collex:discipline>Poetry</collex:discipline>
+        </subjects>
+        <addProperties>
+            <collex:genre>Poetry</collex:genre>
+        </addProperties>
+        <removeProperties>
+            <collex:discipline>Poetry</collex:discipline>
+        </removeProperties>
+    </rule>
     <rule>
         <subjects>
             <dc:type>Catalog</dc:type>
