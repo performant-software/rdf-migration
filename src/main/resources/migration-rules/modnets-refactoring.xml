@@ -151,10 +151,28 @@
     </rule>
     <rule>
         <subjects>
+            <anyOf>
+                <collex:archive>Pfaffs</collex:archive>
+                <collex:archive>UVaPress_VLCS</collex:archive>
+            </anyOf>
             <multiValued>
                 <collex:genre>History</collex:genre>
             </multiValued>
-            <role:AUT>The Vault at Pfaff's</role:AUT>
+        </subjects>
+        <addProperties>
+            <collex:discipline>History</collex:discipline>
+        </addProperties>
+        <removeProperties>
+            <collex:genre>History</collex:genre>
+        </removeProperties>
+    </rule>
+    <rule>
+        <subjects>
+            <anyOf>
+                <collex:archive>Pfaffs</collex:archive>
+                <collex:archive>UVaPress_VLCS</collex:archive>
+            </anyOf>
+            <collex:genre>History</collex:genre>
         </subjects>
         <addProperties>
             <collex:discipline>History</collex:discipline>
