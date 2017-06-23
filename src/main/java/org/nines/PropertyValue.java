@@ -79,8 +79,10 @@ public class PropertyValue {
         }
         if (singleton) {
             xml.remove(resource, property);
+            resource.removeAll(property);
         }
         xml.add(resource, property, value);
+        resource.addProperty(property, value);
         LOG.finest(() -> String.format("+ %s %s = %s", resource, property, value));
         return true;
     }
@@ -98,6 +100,11 @@ public class PropertyValue {
             return false;
         }
         xml.remove(resource, property, value);
+        for (final StmtIterator it = resource.listProperties(property); it.hasNext(); ) {
+            if (value.equals(it.nextStatement().getString())) {
+                it.remove();
+            }
+        }
         LOG.finest(() -> String.format("- %s %s = %s", resource, property, value));
         return true;
     }
