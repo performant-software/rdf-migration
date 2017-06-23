@@ -15,6 +15,7 @@
  */
 package org.nines;
 
+import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
@@ -23,6 +24,7 @@ import org.apache.jena.vocabulary.DC;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -54,6 +56,28 @@ public class Schema {
             this.message = message;
         }
     }
+
+    public static String[][] csvReport(Schema.Error[] errors, RdfProject rdfProject, File rdfFile, String branch) {
+        return Stream.of(errors).map(error -> {
+                final String path = rdfProject.git.relativize(rdfFile.toPath()).toString();
+                return new String[]{
+                    path,
+                    error.resource.toString(),
+                    Optional.ofNullable(error.property).map(Property::toString).orElse(""),
+                    Optional.ofNullable(error.value).map(RDFNode::toString).orElse(""),
+                    error.message,
+                    rdfProject.git.gitLabProject.url(branch, path).toString()
+
+                };
+            }).toArray(String[][]::new);
+    }
+
+    public static Stream<Error[]> validate(RdfProject rdfProject, Model model) {
+        return model
+            .listSubjects().filterDrop(RDFNode::isAnon).toList().parallelStream()
+            .map(subject -> validate(rdfProject, subject));
+    }
+
     public static Error[] validate(RdfProject project, Resource resource) {
         final List<List<Error>> errors;
         if (project.git.gitLabProject.name.contains("pages_")) {
